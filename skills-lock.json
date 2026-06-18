@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "project-init": {
+      "source": "bizprat/agent-blueprint",
+      "sourceType": "github",
+      "skillPath": "skills/project-init/SKILL.md",
+      "computedHash": "8e3972fca292c7d8693e9046989cd65b437b6dbc15b1782534231864d6fe29be"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+dist/
+.env
+*.log
+.turbo/
+*.tsbuildinfo
+coverage/
+.vscode/
+{{#if preserveResearchData}}
+# Research data preserved — tracked in git
+{{else}}
+.firecrawl/
+{{/if}}
+{{#if is_pnpm}}
+# pnpm
+pnpm-lock.yaml
+{{else}}
+# npm/yarn
+package-lock.json
+yarn.lock
+{{/if}}

@@ -1,0 +1,36 @@
+{
+  "name": "{{projectName}}",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "validate-docs": "tsx scripts/validate-docs.ts",
+    "check-sizes": "tsx scripts/check-file-sizes.ts",
+    "validate-skills": "tsx scripts/validate-skills.ts",
+    "qa:all": "npm run lint && npm run typecheck && npm run validate-docs && npm run check-sizes && npm run test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "typescript-eslint": "^8.0.0",
+    "eslint-plugin-boundaries": "^6.0.0",
+    "eslint-plugin-functional": "^8.0.0",
+    "eslint-plugin-import": "^2.0.0",
+    "eslint-plugin-unicorn": "^56.0.0",
+    "eslint-plugin-no-secrets": "^2.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.0.0",
+    "tsx": "^4.0.0",
+    "lefthook": "^2.0.0",
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0"
+  },
+  "packageManager": "{{packageManager}}@{{packageManagerVersion}}"
+}

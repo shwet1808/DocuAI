@@ -1,0 +1,81 @@
+{{#if deploy_docker}}
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    env_file:
+      - .env
+    {{#if db_postgres}}
+    depends_on:
+      db:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_healthy
+    {{/if}}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  {{#if db_postgres}}
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "{{projectName}}"
+      POSTGRES_PASSWORD: "change_me"
+      POSTGRES_DB: "{{projectName}}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{projectName}}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    restart: unless-stopped
+    environment:
+      DB_USER: "{{projectName}}"
+      DB_PASSWORD: "change_me"
+      DB_HOST: db
+      DB_NAME: "{{projectName}}"
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 500
+    ports:
+      - "127.0.0.1:6432:5432"
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U {{projectName}}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  {{/if}}
+  {{#if db_sqlite}}
+  db:
+    image: alpine:latest
+    restart: unless-stopped
+    command: ["sh", "-c", "touch /data/{{projectName}}.db && tail -f /dev/null"]
+    volumes:
+      - sqldata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /data/{{projectName}}.db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  {{/if}}
+volumes:
+  {{#if db_postgres}}
+  pgdata:
+  {{/if}}
+  {{#if db_sqlite}}
+  sqldata:
+  {{/if}}
+{{/if}}

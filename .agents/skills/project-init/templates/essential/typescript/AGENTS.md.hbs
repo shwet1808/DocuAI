@@ -1,0 +1,60 @@
+# {{projectName}} — Agent Instructions
+
+{{description}}
+
+## Rules
+
+- Read relevant docs before asking or changing code
+- Keep docs synchronized with code changes
+- Never bypass git hooks with --no-verify or --force
+- Never include secrets in commits, messages, or metadata
+- Verify every change: npm run lint && npm run typecheck && npm run test
+
+## Git Policy
+
+- Branch from master, never push directly
+- Use conventional commits: feat:, fix:, docs:, refactor:, test:, chore:
+- One logical change per commit
+- Atomic commits, PRs under 400 lines
+- Modify the least possible files — 6-15 files = review needed, 30+ = wrong scope
+
+## Read Before Working
+
+Before any task, step through this sequence. Skip steps that do not match your task.
+
+| Step | When | Read |
+|------|------|------|
+| 1 | ALWAYS | This file (AGENTS.md) |
+| 2 | ALWAYS | docs/CODING_RULES.md — code rules and git policy |
+| 3 | Creating or editing any .md file | docs/DOC_FORMATS.md |
+| 4 | Changing architecture or boundaries | docs/decisions/README.md |
+| 5 | Adding new files, dirs, or deps | docs/CONTEXT_STRATEGY.md |
+| 6 | File creeping past 300 lines | docs/FILE_SIZE_RULEBOOK.md |
+| 7 | Blocked by a design choice | docs/OPEN_QUESTIONS.md |
+
+If you skip a step, state why. If a step's doc is missing, flag it as a defect.
+
+## Quality Gates
+
+Run before every commit:
+
+```bash
+npm run lint && npm run typecheck && npm run test
+```
+
+Failing a gate and proceeding is a defect.
+
+## How To Ask Questions
+
+Present 2-4 specific options. Mark recommended with "(Recommended)". Explain trade-offs.
+
+## When To STOP
+
+- Same concept may already exist
+- New dependency is not clearly needed
+- Intent is unclear and docs don't answer it
+
+## Terminology
+
+- Coding Agent = AI tool building this project
+- Human Maintainer = person operating this project

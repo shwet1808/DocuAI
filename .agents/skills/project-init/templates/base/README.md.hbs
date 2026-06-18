@@ -1,28 +1,34 @@
-# my-ai-runtime
+# {{projectName}}
 
-A TypeScript AI orchestration runtime
+{{description}}
 
 ## Quick Start
 
 ```bash
-
-pnpm install
+{{#if packageManager}}
+{{packageManager}} install
 {{#if is_typescript}}
 npm run lint && npm run typecheck
-
+{{/if}}
 {{/if}}
 ```
 
 ## Project Structure
 
-
+{{#if is_monorepo}}
 ```
 apps/        # application workspaces
 packages/    # shared packages
 docs/        # project documentation
 scripts/     # validation and tooling scripts
 ```
-
+{{else}}
+```
+src/         # source code
+docs/        # project documentation
+scripts/     # validation and tooling scripts
+```
+{{/if}}
 
 ## Documentation
 
@@ -34,4 +40,4 @@ This project is governed by [AGENTS.md](AGENTS.md). All coding agents MUST read 
 
 ## License
 
-roprietary
+{{#if openSource}}MIT{{else}}Proprietary{{/if}}
