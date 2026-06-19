@@ -1,0 +1,89 @@
+# Coding Rules
+
+← [AGENTS.md](../AGENTS.md) ← [docs/README.md](./README.md)
+
+**Phase:** always
+**Owner:** cross-cutting
+
+---
+
+## Git Policy
+
+- NEVER push to master/main directly — use branches and PRs
+- NEVER force push
+- NEVER bypass git hooks with --no-verify
+- NEVER include secrets in commits, messages, or metadata
+- MUST use atomic commits — one logical change per commit
+- MUST use conventional commits: feat:, fix:, docs:, refactor:, test:, chore:
+- MUST keep PRs under 400 lines changed — split large features
+- MUST include a PR summary describing what changed and why
+- MUST delete merged branches same day
+- MUST modify the least possible files per task — 6-15 files = review needed, 30+ files = likely wrong scope
+- MUST NOT silently add architecture complexity, dependencies, or infrastructure
+
+---
+
+## Code Comments
+
+- MUST use `// ==== Section Name ===============================================` for section dividers (extend to column 70)
+- MUST use `// ---- Sub-section ----` for minor divisions within sections
+- NEVER use Unicode box-drawing characters (`─`, `┌`, `┤`) in source code — breaks on some terminals, wastes LLM tokens
+
+---
+
+
+## TypeScript
+
+- MUST use strict mode (strict: true, noUncheckedIndexedAccess, noUnusedLocals)
+- NEVER use `any` or `@ts-ignore`
+- MUST use extensionless relative imports
+- MUST use explicit return types on all exported functions
+- MUST use read-only types (Readonly\<T\>) for all parameters and returns unless mutation is required
+- SHOULD prefer interfaces for object shapes, type aliases for unions
+- MUST NOT use `z.any()` in Zod schemas
+
+## Module Structure
+
+Every module file follows this order:
+1. JSDoc — what this module does (1-2 sentences)
+2. Type imports
+3. Value imports
+4. Constants (UPPER_SNAKE)
+5. Types defined in this module
+6. Public functions (camelCase, typed, with JSDoc)
+7. Private helpers (_prefix)
+
+## Naming
+
+| Category | Convention | Example |
+|----------|-----------|---------|
+| Files | kebab-case | `evidence-generator.ts` |
+| Directories | kebab-case | `src/stages/` |
+| Functions | camelCase | `computeChart()` |
+| Variables | camelCase | `activeCandidates` |
+| Constants | UPPER_SNAKE | `MAX_RETRIES` |
+| Interfaces | PascalCase | `ChartFact` |
+| Types | PascalCase | `Result\<T, E\>` |
+
+
+
+
+---
+
+## Code Reuse
+
+| Situation | Action |
+|-----------|--------|
+| Used once | Keep inline — do not abstract |
+| Used 2+ times in same module | Extract to private helper |
+| Used 2+ times across modules | Extract to shared module |
+| Used 2+ times across workspaces | Extract to shared package |
+
+---
+
+## Error Handling
+
+- Core business logic MUST use typed Result types, not thrown exceptions
+- System boundaries (API handlers, file I/O) MAY use try/catch
+- NEVER swallow errors with empty catch blocks
+- Every error MUST have a unique error code
