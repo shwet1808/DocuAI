@@ -1,5 +1,0 @@
-
-# CI runs locally via lefthook pre-push hooks
-# Quality gates are enforced at: lint > typecheck > validate-docs > check-sizes > test
-# See lefthook.yml for the full configuration
-
