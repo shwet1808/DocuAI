@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import { getAppName } from "./index.js";
 
 describe("index", () => {
