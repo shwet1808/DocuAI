@@ -1,0 +1,17 @@
+dist/
+.env
+*.log
+.turbo/
+*.tsbuildinfo
+coverage/
+.vscode/
+.output/
+
+# Research data preserved — tracked in git
+
+
+# npm/yarn
+package-lock.json
+yarn.lock
+
+node_modules

@@ -1,0 +1,19 @@
+{
+  "projectName": "docu-ai",
+  "description": "Highly resilient, autonomous AI News and Research Agent using TypeScript, Express, and Crawlee",
+  "projectType": "single-app",
+  "language": "typescript",
+  "modelCapability": "capable",
+  "domainComplexity": "single-domain",
+  "aiRuntime": "none",
+  "database": "none",
+  "auth": "none",
+  "deployment": "none",
+  "ci": "local",
+  "openSource": false,
+  "multiTenant": false,
+  "preserveResearchData": true,
+  "packageManager": "npm",
+  "toolAliases": ["cursor", "cline", "claude"],
+  "deferredDecisions": []
+}

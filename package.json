@@ -1,0 +1,49 @@
+{
+  "name": "docu-ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/app.ts",
+    "chat": "tsx src/chat.ts",
+    "lint": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "validate-docs": "tsx scripts/validate-docs.ts",
+    "check-sizes": "tsx scripts/check-file-sizes.ts",
+    "validate-skills": "tsx scripts/validate-skills.ts",
+    "qa:all": "npm run lint && npm run typecheck && npm run validate-docs && npm run check-sizes && npm run test"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "@eslint/js": "^9.0.0",
+    "@types/express": "^5.0.6",
+    "@types/jsdom": "^28.0.3",
+    "@types/node": "^22.0.0",
+    "@types/turndown": "^5.0.6",
+    "eslint": "^9.0.0",
+    "eslint-plugin-boundaries": "^6.0.0",
+    "eslint-plugin-functional": "^8.0.0",
+    "eslint-plugin-import": "^2.0.0",
+    "eslint-plugin-no-secrets": "^2.0.0",
+    "eslint-plugin-unicorn": "^56.0.0",
+    "lefthook": "^2.0.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^2.0.0"
+  },
+  "packageManager": "npm@11.12.0",
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "crawlee": "^3.17.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsdom": "^29.1.1",
+    "turndown": "^7.2.4"
+  }
+}
