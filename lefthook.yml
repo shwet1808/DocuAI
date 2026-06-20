@@ -4,13 +4,6 @@
 pre-push:
   parallel: true
   commands:
-    block-master-push:
-      run: |
-        branch=$(git rev-parse --abbrev-ref HEAD)
-        if [ "$branch" = "master" ] || [ "$branch" = "main" ]; then
-          echo "Direct push to $branch is blocked. Use a feature branch and PR."
-          exit 1
-        fi
     lint:
       run: npm run lint
     typecheck:
