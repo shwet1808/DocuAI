@@ -23,10 +23,11 @@ You must follow the current state instructions and output commands when required
 
 const GATHER_SUBTOPIC_PROMPT = `${BASE_SYSTEM_PROMPT}
 CURRENT TASK: We are in the 'GATHER_SUBTOPIC' step.
-1. Check the conversation history. If the user has explicitly selected or named a subtopic or exam (e.g. "TCS NQT", "Artemis program", "WW2"), output the command:
-   [SET_SUBTOPIC: <subtopic_name>]
+This agent is a fully generalized research agent that gathers authentic, up-to-date (2026) information on any topic (such as exams, career hiring, history, polity, current affairs, wars, science, or technology).
+1. Check the conversation history. If the user has already asked a specific research question, named a specific subtopic, or specified exactly what they want to find, output the command:
+   [SET_SUBTOPIC: <subtopic_name_or_query>]
    Do NOT output anything else.
-2. If the user has NOT specified a subtopic yet, analyze their query. Provide a brief (1-2 sentences) overview/categories of the topic, and ask the user to clarify which specific subtopic/exam they want to focus on.
+2. If the user has only specified a very broad/vague topic (e.g. just a general category, brand, or wide field), analyze their query, provide a brief (1-2 sentences) overview/categories of the topic, and ask the user to clarify which specific subtopic or question they want to focus on.
 `;
 
 const SEARCH_SUBTOPIC_PROMPT = `${BASE_SYSTEM_PROMPT}
@@ -36,16 +37,16 @@ The selected subtopic is: {SUBTOPIC}.
    [TRIGGER_RESEARCH: {SUBTOPIC} process dates timeline 2026]
    Do NOT output anything else.
 2. If the sources are in the history, compile and arrange the information in a structured timeline format with dates and months for 2026. Output this clearly.
-3. At the end of your response, ask the user if they want to ask anything else, such as preparation details or preparation materials.
+3. At the end of your response, ask the user if they want to ask anything else, such as preparation details, study guides, resources, or background/prelude details.
 `;
 
 const ASK_PREPARATION_PROMPT = `${BASE_SYSTEM_PROMPT}
 CURRENT TASK: We are in the 'ASK_PREPARATION' step.
 The selected subtopic is: {SUBTOPIC}.
-1. If the user asks for preparation materials or details on how to prepare, trigger a search query if needed:
-   [TRIGGER_RESEARCH: {SUBTOPIC} preparation materials guide 2026]
-   and compile the latest preparation material and resources.
-2. If they have finished asking about preparation, or did not ask for it, ask if they want any more information (specifically salary, stipend, or future scope/outlook). Output the GOTO command to transition:
+1. If the user asks for preparation materials, resources, guides, or background context, trigger a search query if needed:
+   [TRIGGER_RESEARCH: {SUBTOPIC} preparation guides resources 2026]
+   and compile the latest details and links.
+2. If they have finished asking about preparation/resources, or did not ask for it, ask if they want any more information (specifically salary/stipend/scope for jobs, or future impact/consequences/costs for other topics). Output the GOTO command to transition:
    [GOTO: ASK_ADDITIONAL_INFO] followed by your question.
 3. If they request a report instead, transition:
    [GOTO: ASK_REPORT_BLUEPRINT]
@@ -54,8 +55,8 @@ The selected subtopic is: {SUBTOPIC}.
 const ASK_ADDITIONAL_INFO_PROMPT = `${BASE_SYSTEM_PROMPT}
 CURRENT TASK: We are in the 'ASK_ADDITIONAL_INFO' step.
 The selected subtopic is: {SUBTOPIC}.
-1. If the user asks about salary, stipend, future scope, or related details, trigger search if needed:
-   [TRIGGER_RESEARCH: {SUBTOPIC} salary stipend future scope 2026]
+1. If the user asks about salary, stipend, future scope, cost, impact, consequences, or related details, trigger search if needed:
+   [TRIGGER_RESEARCH: {SUBTOPIC} salary stipend future scope cost impact consequences 2026]
    and respond with the latest authentic data.
 2. If they do not want more info or have finished asking, ask them if they would like a final report. Output:
    [GOTO: ASK_REPORT_BLUEPRINT] followed by a message presenting the report option.

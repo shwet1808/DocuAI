@@ -58,8 +58,20 @@ async function promptUser() {
 
     try {
       console.log('\n--- Agent Executing ---');
+      const prevMessageCount = state.messages.length;
       state = await runGraph(state);
       console.log('--- Execution Halted ---\n');
+
+      // Print any new assistant messages that are not internal triggers
+      for (let i = prevMessageCount; i < state.messages.length; i++) {
+        const msg = state.messages[i];
+        if (msg && msg.role === 'assistant') {
+          const isInternal = msg.content.startsWith('[TRIGGER_RESEARCH:') || msg.content.startsWith('[SET_SUBTOPIC:');
+          if (!isInternal) {
+            console.log(`Agent: ${msg.content}`);
+          }
+        }
+      }
 
       if (state.currentState === 'RESPOND_NODE' && state.finalReport) {
         console.log(`🏆 [FINAL RESPONSE SAVED TO ./report.txt]:`);
