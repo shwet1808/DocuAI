@@ -3,7 +3,17 @@ export interface Message {
   content: string;
 }
 
-export type StateName = 'INTAKE' | 'ROUTER' | 'RESEARCH_NODE' | 'RESPOND_NODE' | 'CONFUSION_NODE';
+export type StateName =
+  | 'INTAKE'
+  | 'GATHER_SUBTOPIC'
+  | 'SEARCH_SUBTOPIC'
+  | 'ASK_PREPARATION'
+  | 'ASK_ADDITIONAL_INFO'
+  | 'ASK_REPORT_BLUEPRINT'
+  | 'CONFIRM_REPORT'
+  | 'RESEARCH_NODE'
+  | 'CONFUSION_NODE'
+  | 'RESPOND_NODE';
 
 export interface AgentState {
   sessionId: string;
@@ -13,4 +23,7 @@ export interface AgentState {
   confusionReason?: string;
   finalReport?: string;
   targetFormat?: string;
+  subtopic?: string;
+  blueprintConfirmed?: boolean;
+  previousState?: StateName;
 }

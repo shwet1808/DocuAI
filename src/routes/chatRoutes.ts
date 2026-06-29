@@ -26,7 +26,7 @@ router.post('/chat', async (req: Request, res: Response, next: NextFunction): Pr
       state = {
         sessionId: activeSessionId,
         messages: [],
-        currentState: 'INTAKE',
+        currentState: 'GATHER_SUBTOPIC',
         requiresUserPermission: false,
       };
       sessions.set(activeSessionId, state);
@@ -43,10 +43,9 @@ router.post('/chat', async (req: Request, res: Response, next: NextFunction): Pr
         state.requiresUserPermission = false;
         state.messages.push({ role: 'user', content: message });
       }
-      state.currentState = typeof state.targetFormat === 'string' ? 'ROUTER' : 'INTAKE';
+      state.currentState = state.previousState || state.currentState;
     } else {
       state.messages.push({ role: 'user', content: message });
-      state.currentState = typeof state.targetFormat === 'string' ? 'ROUTER' : 'INTAKE';
     }
 
     // Execute state machine loop

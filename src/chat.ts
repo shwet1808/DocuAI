@@ -14,7 +14,7 @@ const OVERRIDE_COMMANDS = ['proceed', 'continue', 'yes', 'override', 'go'];
 let state: AgentState = {
   sessionId,
   messages: [],
-  currentState: 'INTAKE',
+  currentState: 'GATHER_SUBTOPIC',
   requiresUserPermission: false,
 };
 
@@ -51,12 +51,9 @@ async function promptUser() {
         console.log(`\n--- Sending clarification: "${cleanedInput}" ---`);
         state.messages.push({ role: 'user', content: cleanedInput });
       }
-      // If we don't have a target format yet, go back to INTAKE to evaluate the clarification
-      state.currentState = typeof state.targetFormat === 'string' ? 'ROUTER' : 'INTAKE';
+      state.currentState = state.previousState || state.currentState;
     } else {
       state.messages.push({ role: 'user', content: cleanedInput });
-      // If target format is already set, we can jump to ROUTER, else start at INTAKE
-      state.currentState = typeof state.targetFormat === 'string' ? 'ROUTER' : 'INTAKE';
     }
 
     try {
@@ -65,9 +62,7 @@ async function promptUser() {
       console.log('--- Execution Halted ---\n');
 
       if (state.currentState === 'RESPOND_NODE' && state.finalReport) {
-        const format = (state.targetFormat || 'markdown').toLowerCase();
-        const ext = format === 'json' ? 'json' : (format === 'markdown' ? 'md' : 'txt');
-        console.log(`🏆 [FINAL RESPONSE SAVED TO ./output/report.${ext}]:`);
+        console.log(`🏆 [FINAL RESPONSE SAVED TO ./report.txt]:`);
         console.log('----------------------------------------------------');
         console.log(state.finalReport);
         console.log('----------------------------------------------------');

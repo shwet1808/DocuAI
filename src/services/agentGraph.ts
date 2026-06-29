@@ -3,61 +3,88 @@ import dotenv from 'dotenv';
 import { scrapeUrls } from '../tools/deepScraper.js';
 import { writeReportAtomically } from '../tools/fileSystem.js';
 import { searchDuckDuckGo } from '../tools/searchEngine.js';
-import type { AgentState, Message } from '../types.js';
+import type { AgentState, Message, StateName } from '../types.js';
 
 dotenv.config();
 
-const INTAKE_SYSTEM_PROMPT = `You are the Intake and Scoping assistant for an AI Research Agent.
-Your job is to analyze the user's initial prompt and determine two things:
-1. Do you fully understand the user's specific goal, context, and requirements?
-2. Is the desired output format (e.g., JSON, summary, code, markdown) specified or clear?
+// =============================================================================
+// System Prompts
+// =============================================================================
 
-INSTRUCTIONS:
-- If the user's request is vague, ambiguous, or lacks context such that you cannot formulate a clear research plan, or if the desired output format is not specified or clear, you MUST ask clarifying questions.
-  Output the exact command:
-  [CLARIFY: <your clarifying questions here>]
-  Do NOT output anything else when asking for clarification.
-- If the goal is clear and the desired output format is specified or can be reasonably inferred, determine the output format (e.g. JSON, summary, code, markdown, etc.) and output:
-  [PROCEED: targetFormat=<format>]
-  Do NOT output anything else. Examples of format: "JSON", "summary", "code", "markdown", "text".`;
+const BASE_SYSTEM_PROMPT = `You are a highly resilient, autonomous AI News and Research Agent.
+Your current local time/date is June 30, 2026.
+Always make sure to formulate research queries containing the year '2026' or 'latest' to guarantee the most recent and up-to-date information is fetched.
+Avoid using outdated context or making assumptions based on previous years.
 
-const SYSTEM_PROMPT = `You are a highly resilient, autonomous AI News and Research Agent.
-Your goal is to gather information, verify facts, and compile a final response on the user's query.
+You must follow the current state instructions and output commands when required:
+- To trigger a web search, output: [TRIGGER_RESEARCH: <search query>]
+- To transition to a new step in the workflow, output: [GOTO: <StateName>] followed by your response.
+`;
 
-CRITICAL INSTRUCTIONS:
-1. CHECK MEMORY FIRST: Before triggering a search, evaluate if the current conversation context/history (messages) already contains the answer. If yes, DO NOT search. Skip research and proceed directly to compilation.
-2. REFUSE TO GUESS: If the context does not have the answer, and you do not have sufficient information, you must trigger research.
-3. VERIFY FACTS from at least 2 independent sources.
-4. Prioritize official, academic, or high-reputation news sites.
-5. If you need to search the web or gather/verify facts, output the exact command:
-   [TRIGGER_RESEARCH: <search query>]
-   Do NOT output anything else when triggering research. You can trigger research multiple times if needed.
-6. If there is a critical conflict, ambiguity, or you cannot resolve a contradiction, output the exact command:
-   [CONFUSION: <reason explaining the contradiction or ambiguity>]
-   Do NOT output anything else when raising confusion.
-7. Output format target: {TARGET_FORMAT}
-   When you have gathered enough verified information and are ready to compile the final response, output it strictly in the format: {TARGET_FORMAT}.
-   - If {TARGET_FORMAT} is "markdown", use the following structure:
-     # Executive Summary
-     ...
-     # Detailed Analysis
-     ...
-     # Important Statistics
-     ...
-     # Source Verification
-     ...
-     # Limitations
-     ...
-     # Conclusion
-     ...
-   - If {TARGET_FORMAT} is "JSON", output a valid, clean JSON object.
-   - If {TARGET_FORMAT} is "code", output only the clean code without any conversational wrapping.
-   - If {TARGET_FORMAT} is "summary", output a concise bulleted summary.
-   - For other formats, format the output strictly as requested.
+const GATHER_SUBTOPIC_PROMPT = `${BASE_SYSTEM_PROMPT}
+CURRENT TASK: We are in the 'GATHER_SUBTOPIC' step.
+1. Check the conversation history. If the user has explicitly selected or named a subtopic or exam (e.g. "TCS NQT", "Artemis program", "WW2"), output the command:
+   [SET_SUBTOPIC: <subtopic_name>]
+   Do NOT output anything else.
+2. If the user has NOT specified a subtopic yet, analyze their query. Provide a brief (1-2 sentences) overview/categories of the topic, and ask the user to clarify which specific subtopic/exam they want to focus on.
+`;
 
-Always follow the instructions above. Do not guess or hallucinate.`;
+const SEARCH_SUBTOPIC_PROMPT = `${BASE_SYSTEM_PROMPT}
+CURRENT TASK: We are in the 'SEARCH_SUBTOPIC' step.
+The selected subtopic is: {SUBTOPIC}.
+1. If the conversation does not yet contain verified source details for the timeline/process of this subtopic, you must trigger a search to gather the latest (2026) authentic information. Output:
+   [TRIGGER_RESEARCH: {SUBTOPIC} process dates timeline 2026]
+   Do NOT output anything else.
+2. If the sources are in the history, compile and arrange the information in a structured timeline format with dates and months for 2026. Output this clearly.
+3. At the end of your response, ask the user if they want to ask anything else, such as preparation details or preparation materials.
+`;
 
-async function callLLM(messages: Message[], systemPrompt: string = SYSTEM_PROMPT): Promise<string> {
+const ASK_PREPARATION_PROMPT = `${BASE_SYSTEM_PROMPT}
+CURRENT TASK: We are in the 'ASK_PREPARATION' step.
+The selected subtopic is: {SUBTOPIC}.
+1. If the user asks for preparation materials or details on how to prepare, trigger a search query if needed:
+   [TRIGGER_RESEARCH: {SUBTOPIC} preparation materials guide 2026]
+   and compile the latest preparation material and resources.
+2. If they have finished asking about preparation, or did not ask for it, ask if they want any more information (specifically salary, stipend, or future scope/outlook). Output the GOTO command to transition:
+   [GOTO: ASK_ADDITIONAL_INFO] followed by your question.
+3. If they request a report instead, transition:
+   [GOTO: ASK_REPORT_BLUEPRINT]
+`;
+
+const ASK_ADDITIONAL_INFO_PROMPT = `${BASE_SYSTEM_PROMPT}
+CURRENT TASK: We are in the 'ASK_ADDITIONAL_INFO' step.
+The selected subtopic is: {SUBTOPIC}.
+1. If the user asks about salary, stipend, future scope, or related details, trigger search if needed:
+   [TRIGGER_RESEARCH: {SUBTOPIC} salary stipend future scope 2026]
+   and respond with the latest authentic data.
+2. If they do not want more info or have finished asking, ask them if they would like a final report. Output:
+   [GOTO: ASK_REPORT_BLUEPRINT] followed by a message presenting the report option.
+`;
+
+const ASK_REPORT_BLUEPRINT_PROMPT = `${BASE_SYSTEM_PROMPT}
+CURRENT TASK: We are in the 'ASK_REPORT_BLUEPRINT' step.
+The selected subtopic is: {SUBTOPIC}.
+1. Present a short, structured report blueprint (outline).
+2. Ask the user if they want to add or remove anything from the report blueprint.
+3. If the user confirms/agrees to the blueprint (e.g. says "yes", "proceed", "confirm", "looks good"), output:
+   [GOTO: CONFIRM_REPORT]
+   Do NOT output anything else.
+`;
+
+const CONFIRM_REPORT_PROMPT = `${BASE_SYSTEM_PROMPT}
+CURRENT TASK: We are in the 'CONFIRM_REPORT' step.
+The selected subtopic is: {SUBTOPIC}.
+Generate the final detailed report based on all gathered info.
+- The report MUST contain visual explanations like tables, ASCII graphs/charts, or flowcharts, and be arranged in a highly useful manner with headings and subtopics.
+- Make sure to format dates, timeline, preparation materials, salary, stipend, and future scope in the report.
+- The output of this response will be saved directly into report.txt. Do not wrap it in markdown code blocks or add chat filler. Just write the raw report content.
+`;
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+async function callLLM(messages: Message[], systemPrompt: string): Promise<string> {
   const apiKey = (process.env.OPENROUTER_API_KEY || '').trim();
   const model = (process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash').trim();
 
@@ -99,91 +126,235 @@ async function callLLM(messages: Message[], systemPrompt: string = SYSTEM_PROMPT
   return content.trim();
 }
 
-/**
- * Runs the state machine execution loop until we reach a halting state (CONFUSION_NODE or RESPOND_NODE).
- */
+// =============================================================================
+// State Machine Loop
+// =============================================================================
+
 export async function runGraph(state: AgentState): Promise<AgentState> {
   let loops = 0;
-  const maxLoops = 10; // Safeguard loop limit
+  const maxLoops = 10;
 
   while (loops < maxLoops) {
     loops++;
     console.log(`[Session: ${state.sessionId}] State: ${state.currentState} (Loop: ${loops})`);
 
+    // ---- INTAKE ----
     if (state.currentState === 'INTAKE') {
+      state.currentState = 'GATHER_SUBTOPIC';
+      continue;
+    }
+
+    // ---- GATHER_SUBTOPIC ----
+    else if (state.currentState === 'GATHER_SUBTOPIC') {
       try {
-        const responseText = await callLLM(state.messages, INTAKE_SYSTEM_PROMPT);
+        const responseText = await callLLM(state.messages, GATHER_SUBTOPIC_PROMPT);
+        const subtopicMatch = responseText.match(/\[set_subtopic:\s*([\S\s]+?)]/i);
 
-        const clarifyMatch = responseText.match(/\[clarify:\s*([\S\s]+?)]/i);
-        const proceedMatch = responseText.match(/\[proceed:\s*targetformat=([\S\s]+?)]/i);
-
-        if (clarifyMatch && clarifyMatch[1]) {
-          const questions = clarifyMatch[1].trim();
-          console.log(`[Session: ${state.sessionId}] Intake requires clarification: "${questions}"`);
-          state.messages.push({ role: 'assistant', content: `[CLARIFY: ${questions}]` });
-          state.confusionReason = questions;
-          state.currentState = 'CONFUSION_NODE';
-        } else if (proceedMatch && proceedMatch[1]) {
-          const format = proceedMatch[1].trim();
-          console.log(`[Session: ${state.sessionId}] Intake proceeded. Format detected: "${format}"`);
-          state.targetFormat = format;
-          state.currentState = 'ROUTER';
+        if (subtopicMatch && subtopicMatch[1]) {
+          state.subtopic = subtopicMatch[1].trim();
+          console.log(`[Session: ${state.sessionId}] Subtopic set to: "${state.subtopic}"`);
+          state.messages.push({ role: 'assistant', content: `Focusing research on: ${state.subtopic}` });
+          state.currentState = 'SEARCH_SUBTOPIC';
+          continue;
         } else {
-          console.log(`[Session: ${state.sessionId}] Intake proceeded with default format.`);
-          state.targetFormat = 'markdown';
-          state.currentState = 'ROUTER';
+          state.messages.push({ role: 'assistant', content: responseText });
+          return state;
         }
       } catch (err: any) {
-        console.error('Error in INTAKE state:', err);
-        state.messages.push({ role: 'system', content: `System error encountered: ${err.message}` });
+        console.error('Error in GATHER_SUBTOPIC:', err);
         state.currentState = 'CONFUSION_NODE';
-        state.confusionReason = `System error in LLM call during Intake: ${err.message}`;
+        state.confusionReason = err.message;
         state.requiresUserPermission = true;
         return state;
       }
     }
 
-    else if (state.currentState === 'ROUTER') {
+    // ---- SEARCH_SUBTOPIC ----
+    else if (state.currentState === 'SEARCH_SUBTOPIC') {
       try {
-        const targetFormat = state.targetFormat || 'markdown';
-        const routerPrompt = SYSTEM_PROMPT.replace(/{TARGET_FORMAT}/g, targetFormat);
-        const responseText = await callLLM(state.messages, routerPrompt);
+        const prompt = SEARCH_SUBTOPIC_PROMPT.replace(/{SUBTOPIC}/g, state.subtopic || 'selected topic');
+        const responseText = await callLLM(state.messages, prompt);
+        const searchMatch = responseText.match(/\[trigger_research:\s*([\S\s]+?)]/i);
 
-        const triggerMatch = responseText.match(/\[TRIGGER_RESEARCH:\s*([\S\s]+?)]/);
-        const confusionMatch = responseText.match(/\[CONFUSION:\s*([\S\s]+?)]/);
-
-        if (triggerMatch && triggerMatch[1]) {
-          const query = triggerMatch[1].trim();
-          console.log(`[Session: ${state.sessionId}] Router triggered research: "${query}"`);
+        if (searchMatch && searchMatch[1]) {
+          const query = searchMatch[1].trim();
           state.messages.push({ role: 'assistant', content: `[TRIGGER_RESEARCH: ${query}]` });
+          state.previousState = 'SEARCH_SUBTOPIC';
           state.currentState = 'RESEARCH_NODE';
-        } else if (confusionMatch && confusionMatch[1]) {
-          const reason = confusionMatch[1].trim();
-          console.log(`[Session: ${state.sessionId}] Router raised confusion: "${reason}"`);
-          state.messages.push({ role: 'assistant', content: `[CONFUSION: ${reason}]` });
-          state.confusionReason = reason;
-          state.currentState = 'CONFUSION_NODE';
+          continue;
         } else {
-          state.finalReport = responseText;
-          state.currentState = 'RESPOND_NODE';
+          state.messages.push({ role: 'assistant', content: responseText });
+          state.currentState = 'ASK_PREPARATION';
+          return state;
         }
       } catch (err: any) {
-        console.error('Error in ROUTER state:', err);
-        state.messages.push({ role: 'system', content: `System error encountered: ${err.message}` });
+        console.error('Error in SEARCH_SUBTOPIC:', err);
         state.currentState = 'CONFUSION_NODE';
-        state.confusionReason = `System error in LLM call: ${err.message}`;
+        state.confusionReason = err.message;
         state.requiresUserPermission = true;
         return state;
       }
     }
 
+    // ---- ASK_PREPARATION ----
+    else if (state.currentState === 'ASK_PREPARATION') {
+      try {
+        const prompt = ASK_PREPARATION_PROMPT.replace(/{SUBTOPIC}/g, state.subtopic || 'selected topic');
+        const responseText = await callLLM(state.messages, prompt);
+        const gotoMatch = responseText.match(/\[goto:\s*([_a-z]+?)]/i);
+        const searchMatch = responseText.match(/\[trigger_research:\s*([\S\s]+?)]/i);
+
+        if (searchMatch && searchMatch[1]) {
+          const query = searchMatch[1].trim();
+          state.messages.push({ role: 'assistant', content: `[TRIGGER_RESEARCH: ${query}]` });
+          state.previousState = 'ASK_PREPARATION';
+          state.currentState = 'RESEARCH_NODE';
+          continue;
+        } else if (gotoMatch && gotoMatch[1]) {
+          const nextState = gotoMatch[1].trim().toUpperCase() as StateName;
+          const cleanText = responseText.replace(/\[goto:\s*([_a-z]+?)]/i, '').trim();
+          if (cleanText) {
+            state.messages.push({ role: 'assistant', content: cleanText });
+          }
+          const validStates: ReadonlyArray<StateName> = [
+            'INTAKE', 'GATHER_SUBTOPIC', 'SEARCH_SUBTOPIC',
+            'ASK_PREPARATION', 'ASK_ADDITIONAL_INFO',
+            'ASK_REPORT_BLUEPRINT', 'CONFIRM_REPORT',
+            'RESEARCH_NODE', 'CONFUSION_NODE', 'RESPOND_NODE'
+          ];
+          if (validStates.includes(nextState)) {
+            state.currentState = nextState;
+          } else {
+            console.warn(`[Session: ${state.sessionId}] Invalid target state: ${nextState}. Defaulting to CONFUSION_NODE.`);
+            state.currentState = 'CONFUSION_NODE';
+            state.confusionReason = `Invalid transition target state: ${nextState}`;
+          }
+          continue;
+        } else {
+          state.messages.push({ role: 'assistant', content: responseText });
+          return state;
+        }
+      } catch (err: any) {
+        console.error('Error in ASK_PREPARATION:', err);
+        state.currentState = 'CONFUSION_NODE';
+        state.confusionReason = err.message;
+        state.requiresUserPermission = true;
+        return state;
+      }
+    }
+
+    // ---- ASK_ADDITIONAL_INFO ----
+    else if (state.currentState === 'ASK_ADDITIONAL_INFO') {
+      try {
+        const prompt = ASK_ADDITIONAL_INFO_PROMPT.replace(/{SUBTOPIC}/g, state.subtopic || 'selected topic');
+        const responseText = await callLLM(state.messages, prompt);
+        const gotoMatch = responseText.match(/\[goto:\s*([_a-z]+?)]/i);
+        const searchMatch = responseText.match(/\[trigger_research:\s*([\S\s]+?)]/i);
+
+        if (searchMatch && searchMatch[1]) {
+          const query = searchMatch[1].trim();
+          state.messages.push({ role: 'assistant', content: `[TRIGGER_RESEARCH: ${query}]` });
+          state.previousState = 'ASK_ADDITIONAL_INFO';
+          state.currentState = 'RESEARCH_NODE';
+          continue;
+        } else if (gotoMatch && gotoMatch[1]) {
+          const nextState = gotoMatch[1].trim().toUpperCase() as StateName;
+          const cleanText = responseText.replace(/\[goto:\s*([_a-z]+?)]/i, '').trim();
+          if (cleanText) {
+            state.messages.push({ role: 'assistant', content: cleanText });
+          }
+          const validStates: ReadonlyArray<StateName> = [
+            'INTAKE', 'GATHER_SUBTOPIC', 'SEARCH_SUBTOPIC',
+            'ASK_PREPARATION', 'ASK_ADDITIONAL_INFO',
+            'ASK_REPORT_BLUEPRINT', 'CONFIRM_REPORT',
+            'RESEARCH_NODE', 'CONFUSION_NODE', 'RESPOND_NODE'
+          ];
+          if (validStates.includes(nextState)) {
+            state.currentState = nextState;
+          } else {
+            console.warn(`[Session: ${state.sessionId}] Invalid target state: ${nextState}. Defaulting to CONFUSION_NODE.`);
+            state.currentState = 'CONFUSION_NODE';
+            state.confusionReason = `Invalid transition target state: ${nextState}`;
+          }
+          continue;
+        } else {
+          state.messages.push({ role: 'assistant', content: responseText });
+          return state;
+        }
+      } catch (err: any) {
+        console.error('Error in ASK_ADDITIONAL_INFO:', err);
+        state.currentState = 'CONFUSION_NODE';
+        state.confusionReason = err.message;
+        state.requiresUserPermission = true;
+        return state;
+      }
+    }
+
+    // ---- ASK_REPORT_BLUEPRINT ----
+    else if (state.currentState === 'ASK_REPORT_BLUEPRINT') {
+      try {
+        const prompt = ASK_REPORT_BLUEPRINT_PROMPT.replace(/{SUBTOPIC}/g, state.subtopic || 'selected topic');
+        const responseText = await callLLM(state.messages, prompt);
+        const gotoMatch = responseText.match(/\[goto:\s*([_a-z]+?)]/i);
+
+        if (gotoMatch && gotoMatch[1]) {
+          const nextState = gotoMatch[1].trim().toUpperCase() as StateName;
+          const cleanText = responseText.replace(/\[goto:\s*([_a-z]+?)]/i, '').trim();
+          if (cleanText) {
+            state.messages.push({ role: 'assistant', content: cleanText });
+          }
+          const validStates: ReadonlyArray<StateName> = [
+            'INTAKE', 'GATHER_SUBTOPIC', 'SEARCH_SUBTOPIC',
+            'ASK_PREPARATION', 'ASK_ADDITIONAL_INFO',
+            'ASK_REPORT_BLUEPRINT', 'CONFIRM_REPORT',
+            'RESEARCH_NODE', 'CONFUSION_NODE', 'RESPOND_NODE'
+          ];
+          if (validStates.includes(nextState)) {
+            state.currentState = nextState;
+          } else {
+            console.warn(`[Session: ${state.sessionId}] Invalid target state: ${nextState}. Defaulting to CONFUSION_NODE.`);
+            state.currentState = 'CONFUSION_NODE';
+            state.confusionReason = `Invalid transition target state: ${nextState}`;
+          }
+          continue;
+        } else {
+          state.messages.push({ role: 'assistant', content: responseText });
+          return state;
+        }
+      } catch (err: any) {
+        console.error('Error in ASK_REPORT_BLUEPRINT:', err);
+        state.currentState = 'CONFUSION_NODE';
+        state.confusionReason = err.message;
+        state.requiresUserPermission = true;
+        return state;
+      }
+    }
+
+    // ---- CONFIRM_REPORT ----
+    else if (state.currentState === 'CONFIRM_REPORT') {
+      try {
+        const prompt = CONFIRM_REPORT_PROMPT.replace(/{SUBTOPIC}/g, state.subtopic || 'selected topic');
+        const responseText = await callLLM(state.messages, prompt);
+        state.finalReport = responseText;
+        state.currentState = 'RESPOND_NODE';
+        continue;
+      } catch (err: any) {
+        console.error('Error in CONFIRM_REPORT:', err);
+        state.currentState = 'CONFUSION_NODE';
+        state.confusionReason = err.message;
+        state.requiresUserPermission = true;
+        return state;
+      }
+    }
+
+    // ---- RESEARCH_NODE ----
     else if (state.currentState === 'RESEARCH_NODE') {
       try {
         let query = '';
         for (let i = state.messages.length - 1; i >= 0; i--) {
           const msg = state.messages[i];
           if (msg && msg.role === 'assistant') {
-            const match = msg.content.match(/\[TRIGGER_RESEARCH:\s*([\S\s]+?)]/);
+            const match = msg.content.match(/\[trigger_research:\s*([\S\s]+?)]/i);
             if (match && match[1]) {
               query = match[1].trim();
               break;
@@ -213,37 +384,30 @@ export async function runGraph(state: AgentState): Promise<AgentState> {
           content: `Here are the search and scrape results for the query "${query}":\n\n${scrapedText}\n\nVerify facts from these sources and proceed.`
         });
 
-        state.currentState = 'ROUTER';
+        // Return back to the state that triggered the research
+        state.currentState = state.previousState || 'GATHER_SUBTOPIC';
+        state.previousState = undefined;
       } catch (err: any) {
         console.error('Error in RESEARCH_NODE state:', err);
         state.messages.push({ role: 'system', content: `Research failed: ${err.message}` });
-        state.currentState = 'ROUTER';
+        state.currentState = state.previousState || 'GATHER_SUBTOPIC';
+        state.previousState = undefined;
       }
     }
 
+    // ---- CONFUSION_NODE ----
     else if (state.currentState === 'CONFUSION_NODE') {
       state.requiresUserPermission = true;
       return state;
     }
 
+    // ---- RESPOND_NODE ----
     else if (state.currentState === 'RESPOND_NODE') {
       try {
         const report = state.finalReport || '';
-        const format = (state.targetFormat || 'markdown').toLowerCase();
-        
-        let fileExtension = 'txt';
-        if (format === 'json') {
-          fileExtension = 'json';
-        } else if (format === 'code') {
-          // Defaults to js/ts or generic txt, let's write to output/report.txt or keep txt
-          fileExtension = 'txt';
-        } else if (format === 'markdown') {
-          fileExtension = 'md';
-        }
-
-        const filePath = `./output/report.${fileExtension}`;
-        console.log(`[Session: ${state.sessionId}] Writing final output (${format}) to ${filePath}...`);
-        writeReportAtomically(report, filePath);
+        console.log(`[Session: ${state.sessionId}] Writing final output to report.txt and output/report.txt...`);
+        writeReportAtomically(report, './report.txt');
+        writeReportAtomically(report, './output/report.txt');
         state.requiresUserPermission = false;
         return state;
       } catch (err: any) {
