@@ -26,7 +26,7 @@ router.post('/chat', async (req: Request, res: Response, next: NextFunction): Pr
       state = {
         sessionId: activeSessionId,
         messages: [],
-        currentState: 'ROUTER',
+        currentState: 'INTAKE',
         requiresUserPermission: false,
       };
       sessions.set(activeSessionId, state);
@@ -38,16 +38,15 @@ router.post('/chat', async (req: Request, res: Response, next: NextFunction): Pr
         console.log(`[Session: ${activeSessionId}] User override command received.`);
         state.requiresUserPermission = false;
         state.messages.push({ role: 'system', content: '[OVERRIDE: USER_PERMITTED]' });
-        state.currentState = 'ROUTER';
       } else {
         console.log(`[Session: ${activeSessionId}] User clarification message received.`);
         state.requiresUserPermission = false;
-        state.messages.push({ role: 'user', content: `[USER_CLARIFICATION: ${message}]` });
-        state.currentState = 'ROUTER';
+        state.messages.push({ role: 'user', content: message });
       }
+      state.currentState = typeof state.targetFormat === 'string' ? 'ROUTER' : 'INTAKE';
     } else {
       state.messages.push({ role: 'user', content: message });
-      state.currentState = 'ROUTER';
+      state.currentState = typeof state.targetFormat === 'string' ? 'ROUTER' : 'INTAKE';
     }
 
     // Execute state machine loop
@@ -63,6 +62,7 @@ router.post('/chat', async (req: Request, res: Response, next: NextFunction): Pr
       confusionReason: updatedState.confusionReason,
       finalReport: updatedState.finalReport,
       messages: updatedState.messages,
+      targetFormat: updatedState.targetFormat,
     });
   } catch (error) {
     next(error);

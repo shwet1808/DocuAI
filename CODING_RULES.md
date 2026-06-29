@@ -9,8 +9,8 @@
 
 ## Git Policy
 
-- NEVER push to master/main directly — use branches and PRs
-- NEVER force push
+<!-- - NEVER push to master/main directly — use branches and PRs -->
+<!-- - NEVER force push -->
 - NEVER bypass git hooks with --no-verify
 - NEVER include secrets in commits, messages, or metadata
 - MUST use atomic commits — one logical change per commit

@@ -14,7 +14,7 @@ const OVERRIDE_COMMANDS = ['proceed', 'continue', 'yes', 'override', 'go'];
 let state: AgentState = {
   sessionId,
   messages: [],
-  currentState: 'ROUTER',
+  currentState: 'INTAKE',
   requiresUserPermission: false,
 };
 
@@ -23,7 +23,7 @@ async function promptUser() {
 
   let queryPrompt = '\nYou: ';
   if (isConfusion) {
-    console.log(`\n⚠️  [AGENT CONFUSION]: ${state.confusionReason}`);
+    console.log(`\n⚠️  [AGENT CLARIFICATION / CONFUSION]: ${state.confusionReason}`);
     console.log(`Type one of these override commands to proceed: ${OVERRIDE_COMMANDS.join(', ')}`);
     console.log('Or type clarifying instructions to guide the agent.');
     queryPrompt = 'Override / Clarification: ';
@@ -49,12 +49,14 @@ async function promptUser() {
         state.messages.push({ role: 'system', content: '[OVERRIDE: USER_PERMITTED]' });
       } else {
         console.log(`\n--- Sending clarification: "${cleanedInput}" ---`);
-        state.messages.push({ role: 'user', content: `[USER_CLARIFICATION: ${cleanedInput}]` });
+        state.messages.push({ role: 'user', content: cleanedInput });
       }
-      state.currentState = 'ROUTER';
+      // If we don't have a target format yet, go back to INTAKE to evaluate the clarification
+      state.currentState = typeof state.targetFormat === 'string' ? 'ROUTER' : 'INTAKE';
     } else {
       state.messages.push({ role: 'user', content: cleanedInput });
-      state.currentState = 'ROUTER';
+      // If target format is already set, we can jump to ROUTER, else start at INTAKE
+      state.currentState = typeof state.targetFormat === 'string' ? 'ROUTER' : 'INTAKE';
     }
 
     try {
@@ -63,7 +65,9 @@ async function promptUser() {
       console.log('--- Execution Halted ---\n');
 
       if (state.currentState === 'RESPOND_NODE' && state.finalReport) {
-        console.log('🏆 [FINAL REPORT SAVED TO ./output/report.txt]:');
+        const format = (state.targetFormat || 'markdown').toLowerCase();
+        const ext = format === 'json' ? 'json' : (format === 'markdown' ? 'md' : 'txt');
+        console.log(`🏆 [FINAL RESPONSE SAVED TO ./output/report.${ext}]:`);
         console.log('----------------------------------------------------');
         console.log(state.finalReport);
         console.log('----------------------------------------------------');

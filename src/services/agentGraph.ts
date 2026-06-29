@@ -7,38 +7,57 @@ import type { AgentState, Message } from '../types.js';
 
 dotenv.config();
 
+const INTAKE_SYSTEM_PROMPT = `You are the Intake and Scoping assistant for an AI Research Agent.
+Your job is to analyze the user's initial prompt and determine two things:
+1. Do you fully understand the user's specific goal, context, and requirements?
+2. Is the desired output format (e.g., JSON, summary, code, markdown) specified or clear?
+
+INSTRUCTIONS:
+- If the user's request is vague, ambiguous, or lacks context such that you cannot formulate a clear research plan, or if the desired output format is not specified or clear, you MUST ask clarifying questions.
+  Output the exact command:
+  [CLARIFY: <your clarifying questions here>]
+  Do NOT output anything else when asking for clarification.
+- If the goal is clear and the desired output format is specified or can be reasonably inferred, determine the output format (e.g. JSON, summary, code, markdown, etc.) and output:
+  [PROCEED: targetFormat=<format>]
+  Do NOT output anything else. Examples of format: "JSON", "summary", "code", "markdown", "text".`;
 
 const SYSTEM_PROMPT = `You are a highly resilient, autonomous AI News and Research Agent.
-Your goal is to gather information, verify facts, and compile a report on the user's query.
+Your goal is to gather information, verify facts, and compile a final response on the user's query.
 
 CRITICAL INSTRUCTIONS:
-1. REFUSE TO GUESS. If you do not have sufficient information, you must trigger research.
-2. VERIFY FACTS from at least 2 independent sources.
-3. Prioritize official, academic, or high-reputation news sites.
-4. If you need to search the web or gather/verify facts, output the exact command:
+1. CHECK MEMORY FIRST: Before triggering a search, evaluate if the current conversation context/history (messages) already contains the answer. If yes, DO NOT search. Skip research and proceed directly to compilation.
+2. REFUSE TO GUESS: If the context does not have the answer, and you do not have sufficient information, you must trigger research.
+3. VERIFY FACTS from at least 2 independent sources.
+4. Prioritize official, academic, or high-reputation news sites.
+5. If you need to search the web or gather/verify facts, output the exact command:
    [TRIGGER_RESEARCH: <search query>]
    Do NOT output anything else when triggering research. You can trigger research multiple times if needed.
-5. If there is a critical conflict, ambiguity, or you cannot resolve a contradiction, output the exact command:
+6. If there is a critical conflict, ambiguity, or you cannot resolve a contradiction, output the exact command:
    [CONFUSION: <reason explaining the contradiction or ambiguity>]
    Do NOT output anything else when raising confusion.
-6. When you have gathered enough verified information and are ready to compile the final report, output the report.
-   The final report MUST use the following structure:
-   # Executive Summary
-   ...
-   # Detailed Analysis
-   ...
-   # Important Statistics
-   ...
-   # Source Verification
-   ...
-   # Limitations
-   ...
-   # Conclusion
-   ...
+7. Output format target: {TARGET_FORMAT}
+   When you have gathered enough verified information and are ready to compile the final response, output it strictly in the format: {TARGET_FORMAT}.
+   - If {TARGET_FORMAT} is "markdown", use the following structure:
+     # Executive Summary
+     ...
+     # Detailed Analysis
+     ...
+     # Important Statistics
+     ...
+     # Source Verification
+     ...
+     # Limitations
+     ...
+     # Conclusion
+     ...
+   - If {TARGET_FORMAT} is "JSON", output a valid, clean JSON object.
+   - If {TARGET_FORMAT} is "code", output only the clean code without any conversational wrapping.
+   - If {TARGET_FORMAT} is "summary", output a concise bulleted summary.
+   - For other formats, format the output strictly as requested.
 
 Always follow the instructions above. Do not guess or hallucinate.`;
 
-async function callLLM(messages: Message[]): Promise<string> {
+async function callLLM(messages: Message[], systemPrompt: string = SYSTEM_PROMPT): Promise<string> {
   const apiKey = (process.env.OPENROUTER_API_KEY || '').trim();
   const model = (process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash').trim();
 
@@ -49,7 +68,7 @@ async function callLLM(messages: Message[]): Promise<string> {
   const payload = {
     model: model,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       ...messages
     ],
     temperature: 0.1,
@@ -91,9 +110,44 @@ export async function runGraph(state: AgentState): Promise<AgentState> {
     loops++;
     console.log(`[Session: ${state.sessionId}] State: ${state.currentState} (Loop: ${loops})`);
 
-    if (state.currentState === 'ROUTER') {
+    if (state.currentState === 'INTAKE') {
       try {
-        const responseText = await callLLM(state.messages);
+        const responseText = await callLLM(state.messages, INTAKE_SYSTEM_PROMPT);
+
+        const clarifyMatch = responseText.match(/\[clarify:\s*([\S\s]+?)]/i);
+        const proceedMatch = responseText.match(/\[proceed:\s*targetformat=([\S\s]+?)]/i);
+
+        if (clarifyMatch && clarifyMatch[1]) {
+          const questions = clarifyMatch[1].trim();
+          console.log(`[Session: ${state.sessionId}] Intake requires clarification: "${questions}"`);
+          state.messages.push({ role: 'assistant', content: `[CLARIFY: ${questions}]` });
+          state.confusionReason = questions;
+          state.currentState = 'CONFUSION_NODE';
+        } else if (proceedMatch && proceedMatch[1]) {
+          const format = proceedMatch[1].trim();
+          console.log(`[Session: ${state.sessionId}] Intake proceeded. Format detected: "${format}"`);
+          state.targetFormat = format;
+          state.currentState = 'ROUTER';
+        } else {
+          console.log(`[Session: ${state.sessionId}] Intake proceeded with default format.`);
+          state.targetFormat = 'markdown';
+          state.currentState = 'ROUTER';
+        }
+      } catch (err: any) {
+        console.error('Error in INTAKE state:', err);
+        state.messages.push({ role: 'system', content: `System error encountered: ${err.message}` });
+        state.currentState = 'CONFUSION_NODE';
+        state.confusionReason = `System error in LLM call during Intake: ${err.message}`;
+        state.requiresUserPermission = true;
+        return state;
+      }
+    }
+
+    else if (state.currentState === 'ROUTER') {
+      try {
+        const targetFormat = state.targetFormat || 'markdown';
+        const routerPrompt = SYSTEM_PROMPT.replace(/{TARGET_FORMAT}/g, targetFormat);
+        const responseText = await callLLM(state.messages, routerPrompt);
 
         const triggerMatch = responseText.match(/\[TRIGGER_RESEARCH:\s*([\S\s]+?)]/);
         const confusionMatch = responseText.match(/\[CONFUSION:\s*([\S\s]+?)]/);
@@ -102,7 +156,6 @@ export async function runGraph(state: AgentState): Promise<AgentState> {
           const query = triggerMatch[1].trim();
           console.log(`[Session: ${state.sessionId}] Router triggered research: "${query}"`);
           state.messages.push({ role: 'assistant', content: `[TRIGGER_RESEARCH: ${query}]` });
-          // Store research query in temporary context if needed, but we can transition directly
           state.currentState = 'RESEARCH_NODE';
         } else if (confusionMatch && confusionMatch[1]) {
           const reason = confusionMatch[1].trim();
@@ -111,7 +164,6 @@ export async function runGraph(state: AgentState): Promise<AgentState> {
           state.confusionReason = reason;
           state.currentState = 'CONFUSION_NODE';
         } else {
-          // No instruction match means we have the final report
           state.finalReport = responseText;
           state.currentState = 'RESPOND_NODE';
         }
@@ -127,7 +179,6 @@ export async function runGraph(state: AgentState): Promise<AgentState> {
 
     else if (state.currentState === 'RESEARCH_NODE') {
       try {
-        // Find the last trigger research query from assistant messages
         let query = '';
         for (let i = state.messages.length - 1; i >= 0; i--) {
           const msg = state.messages[i];
@@ -157,13 +208,11 @@ export async function runGraph(state: AgentState): Promise<AgentState> {
           scrapedText = 'No search results found.';
         }
 
-        // Save findings as a system message in the message list
         state.messages.push({
           role: 'system',
           content: `Here are the search and scrape results for the query "${query}":\n\n${scrapedText}\n\nVerify facts from these sources and proceed.`
         });
 
-        // Transition back to ROUTER to decide next step
         state.currentState = 'ROUTER';
       } catch (err: any) {
         console.error('Error in RESEARCH_NODE state:', err);
@@ -174,15 +223,27 @@ export async function runGraph(state: AgentState): Promise<AgentState> {
 
     else if (state.currentState === 'CONFUSION_NODE') {
       state.requiresUserPermission = true;
-      // Halt operations until the client triggers execution again (clarification/override)
       return state;
     }
 
     else if (state.currentState === 'RESPOND_NODE') {
       try {
         const report = state.finalReport || '';
-        console.log(`[Session: ${state.sessionId}] Writing final report to output/report.txt...`);
-        writeReportAtomically(report, './output/report.txt');
+        const format = (state.targetFormat || 'markdown').toLowerCase();
+        
+        let fileExtension = 'txt';
+        if (format === 'json') {
+          fileExtension = 'json';
+        } else if (format === 'code') {
+          // Defaults to js/ts or generic txt, let's write to output/report.txt or keep txt
+          fileExtension = 'txt';
+        } else if (format === 'markdown') {
+          fileExtension = 'md';
+        }
+
+        const filePath = `./output/report.${fileExtension}`;
+        console.log(`[Session: ${state.sessionId}] Writing final output (${format}) to ${filePath}...`);
+        writeReportAtomically(report, filePath);
         state.requiresUserPermission = false;
         return state;
       } catch (err: any) {

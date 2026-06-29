@@ -3,7 +3,7 @@ export interface Message {
   content: string;
 }
 
-export type StateName = 'ROUTER' | 'RESEARCH_NODE' | 'RESPOND_NODE' | 'CONFUSION_NODE';
+export type StateName = 'INTAKE' | 'ROUTER' | 'RESEARCH_NODE' | 'RESPOND_NODE' | 'CONFUSION_NODE';
 
 export interface AgentState {
   sessionId: string;
@@ -12,4 +12,5 @@ export interface AgentState {
   requiresUserPermission: boolean;
   confusionReason?: string;
   finalReport?: string;
+  targetFormat?: string;
 }
