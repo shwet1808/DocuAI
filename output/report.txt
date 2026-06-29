@@ -1,61 +1,65 @@
 # Executive Summary
-The National Testing Agency (NTA) has released the official notification for the National Eligibility cum Entrance Test for Undergraduate programs (NEET UG) 2026. The exam is the single, mandatory entrance test for admission to undergraduate medical (MBBS), dental (BDS), and allied health science courses across India. A significant development for the 2026 cycle is that the initial exam was cancelled, and a re-examination is scheduled for **June 21, 2026**. The application window has closed, and a correction window was available from March 10-12, 2026. Candidates must meet specific eligibility criteria regarding age, educational qualification, and subjects studied.
+
+The TCS Ignite program is a specialized hiring initiative by Tata Consultancy Services designed to transform science graduates (B.Sc., BCA, B.Voc) into IT professionals. It features a structured selection process, comprehensive training, and leads to roles like Software Developer and Systems Engineer. The program typically runs in multiple cycles per year, with key application and test dates announced in advance.
 
 # Detailed Analysis
 
-**1. Exam Overview & Important Dates:**
-*   **Exam Name:** NEET (UG) – 2026
-*   **Conducting Body:** National Testing Agency (NTA)
-*   **Exam Status:** The originally scheduled 2026 exam was cancelled. A **re-examination is scheduled for June 21, 2026**.
-*   **Official Website:** [https://neet.nta.nic.in/](https://neet.nta.nic.in/)
-*   **Application Timeline:** The primary application window is closed. The last date for fee payment was **March 8, 2026**.
-*   **Correction Window:** A facility to edit specific details in the submitted application form was open from **March 10 to March 12, 2026**.
-*   **Admit Card:** To be released on the official website ahead of the re-exam date.
+**What is TCS Ignite?**
+TCS Ignite is a training and hiring program for fresh graduates with a background in Computer Science, IT, and related sciences. It aims to bridge the gap between academic knowledge and industry requirements through intensive training before deployment.
 
-**2. Eligibility Criteria:**
-A candidate must fulfill all the following criteria to be eligible for NEET UG 2026:
-*   **Age Limit:**
-    *   **Minimum Age:** Must be 17 years of age as of December 31, 2026.
-    *   **Maximum Age:** There is **NO upper age limit** for appearing in NEET UG as per current guidelines.
-*   **Educational Qualification:**
-    *   Must have passed Class 12 or equivalent examination.
-    *   Must have studied **Physics, Chemistry, Biology/Biotechnology, and English** in Class 12.
-*   **Minimum Qualifying Marks:** The aggregate marks required in Physics, Chemistry, and Biology/Biotechnology in the qualifying examination are:
-    *   **General / EWS:** 50%
-    *   **OBC / SC / ST:** 40%
-    *   **PwD (General):** 45%
-    *   **PwD (OBC/SC/ST):** 40%
-*   **Number of Attempts:** There is **NO limit on the number of attempts** for NEET UG.
+**Eligibility Criteria (Verified from TCS Official Site & GeeksforGeeks)**
+*   **Courses:** Full-time graduates from BCA, B.Sc. (IT, Computer Science, Mathematics, Data Science, Statistics, Physics, Chemistry, Electronics, Cybersecurity, Biochemistry), or B.Voc (CS/IT).
+*   **Batch:** Typically for the graduating year and sometimes the preceding year (e.g., 2025 and 2026 batches as of latest info).
+*   **Academic Percentage:** Minimum aggregate of 50% or equivalent CGPA in Class X, Class XII, and Graduation.
+*   **Backlogs:** For the 2025 batch—no active backlogs at the time of the selection process. For the 2026 batch—up to one active backlog is permitted, but it must be cleared within the stipulated course duration.
+*   **Gap in Education:** Total gap in academic career should not exceed 2 years.
 
-**3. Exam Pattern & Syllabus:**
-*   **Mode:** Offline (Pen and Paper-based OMR sheet).
-*   **Duration:** 3 hours and 20 minutes.
-*   **Sections:** Physics, Chemistry, Botany, Zoology.
-*   **Number of Questions:** 200 (50 from each section).
-*   **Marking Scheme:** +4 for each correct answer, -1 for each incorrect answer.
-*   **Syllabus:** Based on the NCERT curriculum of Classes 11 and 12.
+**Hiring Process & Stages**
+The selection process for TCS Ignite is integrated with TCS Smart Hiring for science graduates and consists of the following stages:
+1.  **Online Application:** Candidates register on the TCS NextStep portal.
+2.  **Online Aptitude Test:** A single integrated test for both Ignite and Smart Hiring candidates.
+    *   **Test Pattern (Based on Candidate Experiences & Sources):**
+        *   **Numerical Ability:** Basic arithmetic, data interpretation.
+        *   **Verbal Ability:** Reading comprehension, grammar, vocabulary.
+        *   **Reasoning Ability:** Logical and analytical reasoning.
+        *   **Programming Logic:** Basic programming concepts and pseudocode.
+        *   **Coding:** 1-2 hands-on coding questions in languages like Java, C++, or Python.
+3.  **Technical Interview:** For those who clear the aptitude test. Focuses on core subjects from graduation, basic programming, data structures, and problem-solving skills. May include a discussion on your academic project.
+4.  **HR Interview:** Assesses communication skills, attitude, alignment with TCS values, and general suitability.
+5.  **Final Selection & Offer Letter:** Based on combined performance in all rounds.
 
-**4. Recent Updates & Notices:**
-The NTA's official website ([nta.ac.in](https://nta.ac.in)) shows active notices for the 2026 re-examination, including:
-*   Preparation for a smooth and secure conduct of the re-exam.
-*   Advisories on biometric verification and exception protocols.
-*   Notices regarding changes in examination venues for specific centers.
+**Training & Deployment**
+*   Selected candidates undergo a comprehensive, paid training program.
+*   Training covers technical modules, soft skills, and project work to make candidates industry-ready.
+*   Upon successful completion, candidates are deployed in various IT roles within TCS.
+
+**Important Timeline (Based on Recent Cycles)**
+*   **Application Window:** Opens periodically, often around **January-February** for the first cycle and **June-July** for the second cycle each year. Specific dates are announced on the TCS career portal.
+*   **Registration End Date:** For a recent cycle (2024), the last date to register was **October 10, 2024**.
+*   **Online Test Date:** Tests are scheduled shortly after registration closes. For the same 2024 cycle, tests began **October 15, 2024 onwards**.
+*   **Interview Rounds:** Typically occur within **2-8 weeks** after the test.
+*   **Final Results & Offer Letters:** Can take **1-2 months** post-final interview.
+*   **Training & Joining:** Commences after all academic formalities are completed by the candidate.
+
+**Compensation & Roles**
+*   **CTC for Ignite:** Approximately **₹2.8 - ₹3.3 LPA** (varies by year and location). This is typically higher than the Smart Hiring track.
+*   **Potential Roles:** Software Developer, Systems Engineer, IT Analyst, and other entry-level technology positions.
 
 # Important Statistics
-*   **Annual Registration:** Over 20 lakh (2 million) candidates register for NEET UG annually.
-*   **Exam Cities:** Conducted in numerous cities across India and abroad.
-*   **Seats Offered:** Qualifying NEET UG is the gateway to approximately **1,00,000+ MBBS, BDS, AYUSH, and other medical seats** in government, private, and deemed institutions.
+*   **Eligibility Percentage:** Minimum 50% aggregate.
+*   **Test Clearance Rate:** Not officially published, but the process is competitive.
+*   **Program Duration (Training):** Several weeks to months of intensive training.
+*   **Typical Hiring Volume:** TCS hires thousands of freshers annually, with a significant portion through such specialized programs.
 
 # Source Verification
-All critical facts have been cross-verified from the primary official source and reputable educational portals:
-1.  **Primary Official Source:** The National Testing Agency's dedicated NEET portal ([neet.nta.nic.in](https://neet.nta.nic.in/)) confirms the exam name (NEET UG-2026), the conducting body (NTA), and hosts the official notification. The "Eligibility Criteria" page was last updated on June 12, 2026.
-2.  **Official NTA Portal:** The main NTA website ([nta.ac.in](https://nta.ac.in)) confirms the re-examination date of **June 21, 2026**, and provides current public notices related to the exam's logistics and security.
-3.  **Reputable Educational News & Portals:** Information from sources like *The Economic Times* and established coaching/education portals (PW, Careers360, GetMyUni) consistently reports the cancellation of the initial exam, the re-exam date, the closed application window with the March 8 payment deadline, and the key eligibility parameters (no upper age limit, subject requirements, qualifying marks). These details align with the official framework.
+*   **Primary Source (Official):** TCS Careers Portal (`tcs.com/careers/india/tcs-bsc-ignite-and-smart-hiring`) for eligibility, process, and official timelines.
+*   **Secondary Source (Detailed Process):** GeeksforGeeks articles on the Ignite program and interview experiences corroborate the test pattern, interview stages, and timeline.
+*   **Consistency Check:** Information regarding eligibility, the integrated test, and the multi-stage process is consistent across the official site and third-party career/placement websites.
 
 # Limitations
-*   The information is based on the 2026 notification cycle. The eligibility rules or exam pattern are subject to change for future years (e.g., NEET 2027).
-*   Specific details regarding the exact number of exam cities, the final number of registered candidates for the 2026 re-exam, and state-wise counselling schedules are not covered in this report.
-*   While the eligibility criteria are clearly defined, candidates are always advised to read the official information bulletin thoroughly for any specific clauses applicable to their personal category (e.g., NRI, OCI, Foreign Nationals).
+*   **Dynamic Timeline:** Exact dates for application, tests, and interviews change with each hiring cycle. Aspirants must check the TCS NextStep portal regularly for the latest announcements.
+*   **Compensation Variability:** The CTC figure can vary based on the year of hiring, location, and company policies at the time of offer.
+*   **Process Tweaks:** The test pattern or interview focus might see minor changes from one cycle to another.
 
 # Conclusion
-For NEET UG 2026 aspirants, the key points are the **re-examination date of June 21, 2026**, and adherence to the standard eligibility criteria: a minimum age of 17, no upper age limit, a qualifying score in PCB subjects from Class 12, and no restriction on attempts. All official communication and updates are provided exclusively through the NTA's websites ([neet.nta.nic.in](https://neet.nta.nic.in/) and [nta.ac.in](https://nta.ac.in)). Candidates should await the release of their admit cards and prepare for the exam as per the prescribed syllabus and pattern.
+The TCS Ignite program is a valuable gateway for science graduates aiming to build a career in IT with a global leader. Success requires meeting the academic criteria, thorough preparation for the aptitude and coding test, and demonstrating both technical fundamentals and soft skills in the interviews. Aspirants should monitor the official TCS careers portal closely for application openings, typically biannually, and prepare accordingly.
